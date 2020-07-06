@@ -101,13 +101,13 @@ var imgUpload = new Vue({
             const overlay = this.$refs.overlay;
             faceapi.matchDimensions(overlay, displaySize);
             const detections = await faceapi.detectAllFaces(canvas).withFaceLandmarks();
-            console.log(detections);
             this.faceDetectedFlag = detections.length != 0;
             const resizedDetections = faceapi.resizeResults(detections, displaySize);
             this.faces = resizedDetections;
             this.loadingFlag = false;
-            // faceapi.draw.drawDetections(overlay, resizedDetections);
-            // faceapi.draw.drawFaceLandmarks(overlay, resizedDetections);
+            console.log(detections);
+            faceapi.draw.drawDetections(overlay, resizedDetections);
+            faceapi.draw.drawFaceLandmarks(overlay, resizedDetections);
         },
         eraseCanvas: function (canvases) {
             if (!Array.isArray(canvases)) {
@@ -128,24 +128,52 @@ var imgUpload = new Vue({
             img.onload = (e) => {
                 // 描画
                 for (const face of faces) {
-                    const angle = - this.calcFaceAngle(face);
-                    const centerX = face.detection.box.x + face.detection.box.width / 2;
-                    const centerY = face.detection.box.y + face.detection.box.height / 2;
-                    this.drawRotate(ctx, img, face.detection.box, centerX, centerY, angle);
+                    const info = this.calcFaceInfo(face);
+                    const angle = - info.angle;
+                    const centerX = info.center.x;
+                    const centerY = info.center.y;
+                    this.drawRotate(ctx, img, info.size, centerX, centerY, angle);
                 }
             }
         },
         pienMask: function() {
             this.drawPien();
         },
-        calcFaceAngle: function(face) {
-            const startX = face.landmarks.positions[27].x;
-            const startY = face.landmarks.positions[27].y;
-            const endX = face.landmarks.positions[30].x;
-            const endY = face.landmarks.positions[30].y;
-            const vecX = endX - startX;
-            const vecY = endY - startY;
-            return Math.atan2(vecX, vecY);
+        calcFaceInfo: function(face) {
+            // 鼻のむき
+            // const startX = face.landmarks.positions[27].x;
+            // const startY = face.landmarks.positions[27].y;
+            // const endX = face.landmarks.positions[30].x;
+            // const endY = face.landmarks.positions[30].y;
+            // const vecX = endX - startX;
+            // const vecY = endY - startY;
+            // return Math.atan2(vecX, vecY);
+            // 輪郭の左右上端
+            const faceLeft = face.landmarks.positions[0];
+            const faceRight = face.landmarks.positions[16];
+            const faceBottom = face.landmarks.positions[8];
+            const center = {
+                x: (faceLeft.x + faceRight.x) / 2,
+                y: (faceLeft.y + faceRight.y) / 2
+            };
+            const faceHorizontalVec = {
+                x: faceLeft.x - faceRight.x,
+                y: faceLeft.y - faceRight.y
+            };
+            const faceVerticalVec = {
+                x: faceHorizontalVec.y,
+                y: - faceHorizontalVec.x
+            };
+            const size = {
+                width: Math.sqrt(Math.pow(faceHorizontalVec.x, 2) + Math.pow(faceHorizontalVec.y, 2)),
+                height: Math.sqrt(Math.pow(center.x - faceBottom.x, 2) + Math.pow(center.y - faceBottom.y, 2)) * 2
+            };
+            const angle = Math.atan2(faceVerticalVec.x, faceVerticalVec.y);
+            return {
+                angle: angle,
+                center: center,
+                size: size
+            };
         },
         drawRotate: function(ctx, img, size, x, y, angle) {
             // x,y: 描画する画像の中心
@@ -199,11 +227,9 @@ var imgUpload = new Vue({
         }
     },
     mounted: async function() {
-        console.log("a");
         this.loadMessage = "顔検出モデルを読み込んでいます...";
         await faceapi.nets.ssdMobilenetv1.loadFromUri('models/');
         await faceapi.nets.faceLandmark68Net.loadFromUri('models/');
         this.loadingFlag = false;
-        console.log("end");
     }
 });

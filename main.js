@@ -9,6 +9,8 @@ var imgUpload = new Vue({
         drawedSize: undefined,
         loadingFlag: true,
         loadMessage: "顔検出モデルを読み込んでいます...",
+        pienFlag: false,
+        pienMode: "apple"
     },
     methods: {
         // ファイルアップロード時に実行されるメソッド
@@ -105,11 +107,12 @@ var imgUpload = new Vue({
             const resizedDetections = faceapi.resizeResults(detections, displaySize);
             this.faces = resizedDetections;
             this.loadingFlag = false;
-            console.log(detections);
-            faceapi.draw.drawDetections(overlay, resizedDetections);
-            faceapi.draw.drawFaceLandmarks(overlay, resizedDetections);
+            // console.log(detections);
+            // faceapi.draw.drawDetections(overlay, resizedDetections);
+            // faceapi.draw.drawFaceLandmarks(overlay, resizedDetections);
         },
         eraseCanvas: function (canvases) {
+            this.pienFlag = false;
             if (!Array.isArray(canvases)) {
                 canvases = [canvases];
             }
@@ -124,7 +127,7 @@ var imgUpload = new Vue({
             const ctx = overlay.getContext('2d');
             // 画像読み込み
             const img = new Image();
-            img.src = "./img/apple.png";
+            img.src = `./img/${this.pienMode}.png`;
             img.onload = (e) => {
                 // 描画
                 for (const face of faces) {
@@ -137,6 +140,13 @@ var imgUpload = new Vue({
             }
         },
         pienMask: function() {
+            this.pienFlag = true;
+            this.drawPien();
+        },
+        changePien: function(mode) {
+            this.eraseCanvas(this.$refs.overlay);
+            this.pienFlag = true;
+            this.pienMode = mode;
             this.drawPien();
         },
         calcFaceInfo: function(face) {
@@ -189,6 +199,7 @@ var imgUpload = new Vue({
             ctx.restore();
         },
         changeFile: function() {
+            this.pienFlag = false;
             const upload = document.getElementById("fileUpload");
             upload.click();
         },

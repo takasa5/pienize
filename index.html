@@ -38,17 +38,26 @@
             <input v-show="!imageLoadedFlag" type="file" class="fileUpload center" id="fileUpload" @change="onFileChange"  accept="image/*" />
         </div>
         <div v-if="faceDetectedFlag" class="tabArea">
-            <!--
-            <ul class="uk-tab-bottom uk-child-width-expand" uk-tab>
-                <li>
-                    <a @click="pienMask">
-                        🥺
-                        <div class="uk-text-meta uk-text-lowercase">pien</div>
+            <ul v-show="pienFlag" class="uk-tab-bottom uk-child-width-expand" uk-tab>
+                <li class="uk-active">
+                    <a @click="changePien('apple')">
+                        <img class="pienImg" src="img/apple.png">
+                        <div class="uk-text-meta uk-text-capitalize">Apple</div>
                     </a>
                 </li>
-                <li>text</li>
+                <li>
+                    <a @click="changePien('google')">
+                        <img class="pienImg" src="img/google.png">
+                        <div class="uk-text-meta uk-text-capitalize">Google</div>
+                    </a>
+                </li>
+                <li>
+                    <a @click="changePien('twitter')">
+                        <img class="pienImg" src="img/twitter.png">
+                        <div class="uk-text-meta uk-text-capitalize">Twitter</div>
+                    </a>
+                </li>
             </ul>
-            -->
             <ul id="editTab" class="uk-tab-bottom uk-child-width-expand" uk-tab>
                 <li class="uk-active">
                     <a @click="eraseCanvas($refs.overlay)">

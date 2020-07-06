@@ -113,6 +113,7 @@ button{
     width: calc(100vw + 20px);
     margin-bottom: 0;
     margin-top: 0;
+    background-color: white;
 }
 
 .loadArea {
@@ -126,4 +127,8 @@ button{
 
 .loadArea > div {
     width: 100%;
+}
+
+.pienImg {
+    height: 1em;
 }

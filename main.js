@@ -10,7 +10,8 @@ var imgUpload = new Vue({
         loadingFlag: true,
         loadMessage: "顔検出モデルを読み込んでいます...",
         pienFlag: false,
-        pienMode: "apple"
+        pienMode: "apple",
+        drawMode: undefined
     },
     methods: {
         // ファイルアップロード時に実行されるメソッド
@@ -121,7 +122,7 @@ var imgUpload = new Vue({
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
         },
-        drawPien: function() {
+        drawMask: function() {
             const faces = this.faces;
             const overlay = this.$refs.overlay;
             const ctx = overlay.getContext('2d');
@@ -132,22 +133,47 @@ var imgUpload = new Vue({
                 // 描画
                 for (const face of faces) {
                     const info = this.calcFaceInfo(face);
-                    const angle = - info.angle;
+                    const angle = info.angle;
                     const centerX = info.center.x;
                     const centerY = info.center.y;
                     this.drawRotate(ctx, img, info.size, centerX, centerY, angle);
                 }
             }
         },
+        drawEyes: async function() {
+            const faces = this.faces;
+            const overlay = this.$refs.overlay;
+            const ctx = overlay.getContext('2d');
+            const [left, right] = await this.loadEyes();
+            for (const face of faces) {
+                const info = this.calcFaceInfo(face);
+                this.drawRotate(ctx, left, info.eyes.left.size, info.eyes.left.x, info.eyes.left.y, info.angle);
+                this.drawRotate(ctx, right, info.eyes.right.size, info.eyes.right.x, info.eyes.right.y, info.angle);
+            }
+        },
         pienMask: function() {
+            this.eraseCanvas(this.$refs.overlay);
             this.pienFlag = true;
-            this.drawPien();
+            this.drawMode = "mask";
+            this.pienFlag = true;
+            this.drawMask();
+        },
+        pienEyes: function() {
+            this.eraseCanvas(this.$refs.overlay);
+            this.pienFlag = true;
+            this.drawMode = "eyes";
+            this.pienFlag = true;
+            this.drawEyes();
         },
         changePien: function(mode) {
             this.eraseCanvas(this.$refs.overlay);
             this.pienFlag = true;
             this.pienMode = mode;
-            this.drawPien();
+            if (this.drawMode == "mask") {
+                this.drawMask();
+            } else if (this.drawMode == "eyes") {
+                this.drawEyes();
+            }
         },
         calcFaceInfo: function(face) {
             // 鼻のむき
@@ -158,10 +184,33 @@ var imgUpload = new Vue({
             // const vecX = endX - startX;
             // const vecY = endY - startY;
             // return Math.atan2(vecX, vecY);
-            // 輪郭の左右上端
             const faceLeft = face.landmarks.positions[0];
             const faceRight = face.landmarks.positions[16];
             const faceBottom = face.landmarks.positions[8];
+            const leftEyeWidth = Math.sqrt(
+                Math.pow(face.landmarks.positions[36].x - face.landmarks.positions[39].x, 2)
+                + Math.pow(face.landmarks.positions[36].y - face.landmarks.positions[39].y, 2)
+                ) * 2;
+            const rightEyeWidth = Math.sqrt(
+                Math.pow(face.landmarks.positions[42].x - face.landmarks.positions[45].x, 2)
+                + Math.pow(face.landmarks.positions[42].y - face.landmarks.positions[45].y, 2)
+                ) * 2;
+            const leftEye = {
+                x: (face.landmarks.positions[36].x + face.landmarks.positions[39].x) / 2,
+                y: (face.landmarks.positions[36].y + face.landmarks.positions[39].y) / 2,
+                size: {
+                    width: leftEyeWidth,
+                    height: leftEyeWidth
+                } 
+            };
+            const rightEye = {
+                x: (face.landmarks.positions[42].x + face.landmarks.positions[45].x) / 2,
+                y: (face.landmarks.positions[42].y + face.landmarks.positions[45].y) / 2,
+                size: {
+                    width: rightEyeWidth,
+                    height: rightEyeWidth
+                }
+            };
             const center = {
                 x: (faceLeft.x + faceRight.x) / 2,
                 y: (faceLeft.y + faceRight.y) / 2
@@ -178,11 +227,15 @@ var imgUpload = new Vue({
                 width: Math.sqrt(Math.pow(faceHorizontalVec.x, 2) + Math.pow(faceHorizontalVec.y, 2)),
                 height: Math.sqrt(Math.pow(center.x - faceBottom.x, 2) + Math.pow(center.y - faceBottom.y, 2)) * 2
             };
-            const angle = Math.atan2(faceVerticalVec.x, faceVerticalVec.y);
+            const angle = -Math.atan2(faceVerticalVec.x, faceVerticalVec.y);
             return {
                 angle: angle,
                 center: center,
-                size: size
+                size: size,
+                eyes: {
+                    left: leftEye,
+                    right: rightEye
+                }
             };
         },
         drawRotate: function(ctx, img, size, x, y, angle) {
@@ -219,6 +272,19 @@ var imgUpload = new Vue({
                 );
             }
             return canvas;
+        },
+        loadEyes: async function() {
+            return new Promise((resolve, reject) => {
+                const left = new Image();
+                left.onload = () => {
+                    const right = new Image();
+                    right.onload = () => resolve([left, right]);
+                    right.onerror = () => reject(e);
+                    right.src = `img/${this.pienMode}_right.png`;
+                }
+                left.onerror = (e) => reject(e);
+                left.src = `img/${this.pienMode}_left.png`;
+            });
         },
         getImageFromCanvas: function(canvas) {
             return new Promise((resolve, reject) => {

@@ -135,4 +135,6 @@ button{
 
 #whatButton {
     padding: 0;
+    height: 100%;
+    min-height: initial;
 }

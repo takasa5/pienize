@@ -15,6 +15,18 @@
     <script src="https://cdn.jsdelivr.net/npm/uikit@3.5.4/dist/js/uikit-icons.min.js"></script>
 </head>
 <body>
+    <div id="whatModal" uk-modal>
+        <div class="uk-modal-dialog uk-modal-body uk-margin-auto-vertical">
+            <h2 class="uk-modal-title">Pienizeへようこそ</h2>
+            Pienizeは画像中の顔を"ぴえん🥺化"するツールです。<br>
+            画面中央をクリック/タップして画像を選択すると、画面下部から編集や保存ができます。<br>
+            画像からの顔の検出がうまくいかないと失敗します。すみません。<br>
+            画像はブラウザ内だけで処理され、外部へは送信されません。<br>
+            <br>
+            作者: <a href="https://twitter.com/takasa_five">takasago</a>
+            <button class="uk-modal-close-default" type="button" uk-close></button>
+        </div>
+    </div>
     <div class="introduce uk-navbar-container" uk-navbar>
         <div class="uk-navbar-left">
             <ul class="uk-navbar-nav">
@@ -23,7 +35,11 @@
         </div>
         <div class="uk-navbar-right">
             <ul class="uk-navbar-nav">
-                <li><span uk-icon="question"></span></li>
+                <li>
+                    <a id="whatButton" uk-toggle="target: #whatModal">
+                        <span uk-icon="question"></span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>

@@ -132,3 +132,7 @@ button{
 .pienImg {
     height: 1em;
 }
+
+#whatButton {
+    padding: 0;
+}
